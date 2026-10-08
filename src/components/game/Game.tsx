@@ -53,6 +53,8 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
       danger: cssVar("--hud-danger"), safe: cssVar("--hud-safe"), bg: cssVar("--background"),
       unit: cssVar("--unit-body"), covered: cssVar("--unit-covered"), vehicle: cssVar("--unit-vehicle"),
       civilian: cssVar("--unit-civilian"), detail: cssVar("--unit-detail"), thermal: cssVar("--unit-thermal"),
+      ejecta: cssVar("--terrain-ejecta"), rim: cssVar("--terrain-rim"), craterShadow: cssVar("--terrain-shadow"),
+      craterFloor: cssVar("--terrain-floor"), craterEdge: cssVar("--terrain-edge"), craterCold: cssVar("--terrain-cold"),
     };
 
     const floaters: Floater[] = [];
@@ -172,6 +174,44 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
         : `saturate(0.55) contrast(1.05) brightness(${sim.weather === "dusk" ? 0.6 : 0.85}) blur(${blur}px)`;
       if (img && img.width) ctx.drawImage(img, sx(0), sy(0), WORLD * ppm, WORLD * ppm);
       ctx.filter = "none";
+
+      // Persistent world-space terrain deformation, beneath units and transient dust.
+      for (const [index, crater] of sim.craters.entries()) {
+        if (crater.sector !== sim.sector) continue;
+        const x = sx(crater.x), y = sy(crater.y), r = crater.radius * ppm;
+        if (x + r * 2 < 0 || y + r * 2 < 0 || x - r * 2 > W || y - r * 2 > H) continue;
+        const hot = thermalRef.current;
+        ctx.save(); ctx.translate(x, y);
+        const outline = (scale: number) => {
+          ctx.beginPath();
+          for (let j = 0; j < 24; j++) {
+            const angle = j / 24 * Math.PI * 2;
+            const radius = r * scale * (1 + 0.09 * Math.sin(j * 4.7 + index * 2.3));
+            const px = Math.cos(angle) * radius, py = Math.sin(angle) * radius * 0.9;
+            if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+        };
+        ctx.fillStyle = hot ? C.craterCold : C.ejecta;
+        outline(1.5); ctx.fill();
+        // Scattered displaced earth uses stable geometry, not frame-random noise.
+        for (let j = 0; j < 14; j++) {
+          const a = j * 2.4 + index, distance = r * (1.3 + (j % 4) * 0.2);
+          ctx.beginPath(); ctx.ellipse(Math.cos(a) * distance, Math.sin(a) * distance * 0.9, r * 0.09, r * 0.045, a, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = hot ? C.craterCold : C.rim; outline(1.12); ctx.fill();
+        ctx.fillStyle = hot ? C.craterCold : C.craterShadow; outline(0.92); ctx.fill();
+        ctx.save(); ctx.translate(r * 0.06, r * 0.15);
+        ctx.fillStyle = hot ? C.craterCold : C.craterFloor; outline(0.65); ctx.fill(); ctx.restore();
+        ctx.strokeStyle = hot ? C.craterCold : C.craterEdge;
+        ctx.lineWidth = Math.max(1, ppm * 0.18);
+        ctx.beginPath(); ctx.ellipse(0, 0, r * 1.05, r * 0.94, 0, 0.15, Math.PI * 0.95); ctx.stroke();
+        if (hot) {
+          ctx.globalAlpha = Math.max(0, 1 - (sim.time - crater.createdAt) / 15);
+          ctx.fillStyle = C.thermal; outline(0.85); ctx.fill();
+        }
+        ctx.restore();
+      }
 
       // scorch marks & units
       for (const e of sim.entities) {

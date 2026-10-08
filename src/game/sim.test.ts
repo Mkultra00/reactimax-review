@@ -2,6 +2,39 @@ import { describe, it, expect } from "vitest";
 import { blastDamage, createSim, extractionScore, fallTime, step, strikeScore, START_GRENADES, START_HEALTH, TICK } from "./sim";
 
 describe("rules", () => {
+  it("explosions leave a crater at the impact, even when no target is hit", () => {
+    const s = createSim(3);
+    s.entities = [];
+    const input = { mx: 0, my: 0, climb: 0, drop: false };
+    s.grenades.push({ x: 120, y: 240, impactAt: 1, dropAlt: 60 });
+    step(s, input);
+    expect(s.craters).toHaveLength(0);
+    while (s.time < 1) step(s, input);
+    expect(s.craters).toHaveLength(1);
+    expect(s.craters[0]).toMatchObject({ x: 120, y: 240, sector: 1 });
+    expect(s.craters[0]?.radius).toBeGreaterThan(0);
+    for (let i = 0; i < 200; i++) step(s, input);
+    expect(s.craters).toHaveLength(1);
+    expect(s.grenades).toHaveLength(0);
+  });
+  it("overlapping explosions each deform the terrain", () => {
+    const s = createSim(3);
+    s.entities = [];
+    s.grenades.push(...Array.from({ length: 2 }, () => ({ x: 100, y: 200, impactAt: 0, dropAlt: 60 })));
+    step(s, { mx: 0, my: 0, climb: 0, drop: false });
+    expect(s.craters).toHaveLength(2);
+  });
+  it("terrain damage stays in its sector and a new mission starts undamaged", () => {
+    const s = createSim(3);
+    s.grenades.push({ x: 100, y: 200, impactAt: 0, dropAlt: 60 });
+    step(s, { mx: 0, my: 0, climb: 0, drop: false });
+    s.drone.x = s.extraction.x; s.drone.y = s.extraction.y;
+    step(s, { mx: 0, my: 0, climb: 0, drop: false });
+    expect(s.sector).toBe(2);
+    expect(s.craters.filter((c) => c.sector === 2)).toHaveLength(0);
+    expect(s.craters[0]?.sector).toBe(1);
+    expect(createSim(3).craters).toHaveLength(0);
+  });
   it("fall time t = sqrt(2h/g)", () => expect(fallTime(19.6)).toBeCloseTo(2, 5));
   it("infantry 100", () => expect(strikeScore("infantry", 3)).toBe(100));
   it("vehicle 250", () => expect(strikeScore("vehicle", 3)).toBe(250));

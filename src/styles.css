@@ -114,6 +114,12 @@
   --unit-civilian: oklch(0.45 0.04 60);
   --unit-detail: oklch(0.16 0.01 120);
   --unit-thermal: oklch(0.97 0 0);
+  --terrain-ejecta: oklch(0.35 0.025 85 / 0.75);
+  --terrain-rim: oklch(0.49 0.035 85);
+  --terrain-shadow: oklch(0.12 0.012 85);
+  --terrain-floor: oklch(0.23 0.02 85);
+  --terrain-edge: oklch(0.61 0.03 85);
+  --terrain-cold: oklch(0.29 0 0);
 }
 
 @layer base {
