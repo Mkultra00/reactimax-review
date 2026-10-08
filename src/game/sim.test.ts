@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { blastDamage, createSim, extractionScore, fallTime, step, strikeScore, START_GRENADES, START_HEALTH } from "./sim";
+import { blastDamage, createSim, extractionScore, fallTime, step, strikeScore, START_GRENADES, START_HEALTH, TICK } from "./sim";
 
 describe("rules", () => {
   it("fall time t = sqrt(2h/g)", () => expect(fallTime(19.6)).toBeCloseTo(2, 5));
@@ -30,5 +30,39 @@ describe("rules", () => {
     const s = createSim(3);
     step(s, { mx: 0, my: 0, climb: 0, drop: true });
     expect(s.drone.grenades).toBe(5);
+  });
+  it("vehicle targets keep moving while engaging", () => {
+    const s = createSim(3);
+    const vehicle = s.entities.find((e) => e.kind === "vehicle");
+    if (!vehicle) throw new Error("Missing vehicle target");
+    s.entities = [vehicle]; s.drone.alt = 120;
+    Object.assign(vehicle, { x: 200, y: 200, tx: 300, ty: 200, state: "engage", sightT: 10 });
+    step(s, { mx: 0, my: 0, climb: 0, drop: false });
+    expect(vehicle.state).toBe("engage");
+    expect(vehicle.x).toBeCloseTo(200 + 8 * TICK);
+  });
+  it("people run between waypoints", () => {
+    const s = createSim(3);
+    const runner = s.entities.find((e) => e.kind === "infantry");
+    if (!runner) throw new Error("Missing running target");
+    expect(runner.state).toBe("patrol");
+    s.entities = [runner]; s.drone.alt = 120;
+    Object.assign(runner, { x: 200, y: 200, tx: 300, ty: 200 });
+    for (let i = 0; i < 20; i++) step(s, { mx: 0, my: 0, climb: 0, drop: false });
+    expect(runner.x).toBeCloseTo(203.8);
+  });
+  it("a strike scores against a moving vehicle's current position", () => {
+    const s = createSim(3);
+    const vehicle = s.entities.find((e) => e.kind === "vehicle");
+    if (!vehicle) throw new Error("Missing vehicle target");
+    s.entities = [vehicle]; s.drone.alt = 120;
+    Object.assign(vehicle, { x: 200, y: 200, tx: 300, ty: 200 });
+    const input = { mx: 0, my: 0, climb: 0, drop: false };
+    for (let i = 0; i < 20; i++) step(s, input);
+    s.grenades.push({ x: vehicle.x, y: vehicle.y, impactAt: s.time, dropAlt: 120 });
+    step(s, input);
+    expect(vehicle.state).toBe("dead");
+    expect(s.score).toBe(300);
+    expect(s.kills).toBe(1);
   });
 });

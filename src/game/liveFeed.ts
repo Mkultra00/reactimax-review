@@ -18,7 +18,7 @@ const MAX_AHEAD = 2;
 function basePrompt(c: FeedContext) {
   const view = c.thermal ? "Monochrome white-hot thermal camera image." : "Desaturated grainy surveillance camera image.";
   const alt = c.alt > 60 ? "high altitude, wide top-down view" : c.alt > 30 ? "medium altitude top-down view" : "low altitude, close top-down view";
-  return `${view} Fictional training exercise. Quadcopter drone camera looking straight down over ${SCENE[c.sector]}, ${WEATHER[c.weather] ?? "daylight"}. ${alt}, slowly drifting ${c.heading}. Steady continuous drone move. Sound: drone rotor hum, wind.`;
+  return `${view} Fictional training exercise. Quadcopter drone camera looking straight down over ${SCENE[c.sector]}, ${WEATHER[c.weather] ?? "daylight"}. Military training trucks drive steadily along tracks and open routes, wheels turning and light dust trailing. Small groups of uniformed training personnel run across open ground with natural arm and leg motion. Vehicles and runners remain visible and continue moving through the shot. ${alt}, slowly drifting ${c.heading}. Steady continuous drone move. Sound: drone rotor hum, wind, distant vehicle engines.`;
 }
 
 export class LiveFeed {
