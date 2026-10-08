@@ -51,6 +51,8 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
     const C = {
       hud: cssVar("--hud"), dim: cssVar("--hud-dim"), warn: cssVar("--hud-warn"),
       danger: cssVar("--hud-danger"), safe: cssVar("--hud-safe"), bg: cssVar("--background"),
+      unit: cssVar("--unit-body"), covered: cssVar("--unit-covered"), vehicle: cssVar("--unit-vehicle"),
+      civilian: cssVar("--unit-civilian"), detail: cssVar("--unit-detail"), thermal: cssVar("--unit-thermal"),
     };
 
     const floaters: Floater[] = [];
@@ -181,15 +183,40 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
           continue;
         }
         const hot = thermalRef.current;
-        ctx.fillStyle = hot ? "oklch(0.97 0 0)" : e.cover ? "oklch(0.22 0.02 120 / 0.55)" : "oklch(0.2 0.02 100)";
+        ctx.fillStyle = hot ? C.thermal : e.cover ? C.covered : C.unit;
         if (e.kind === "vehicle" || e.kind === "civilian") {
           const w = ppm * (e.kind === "vehicle" ? 6 : 4.2), h = ppm * (e.kind === "vehicle" ? 3 : 2);
-          ctx.fillStyle = hot ? "oklch(0.95 0 0)" : e.kind === "civilian" ? "oklch(0.45 0.04 60)" : "oklch(0.28 0.03 120)";
-          ctx.fillRect(x - w / 2, y - h / 2, w, h);
+          ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(e.ty - e.y, e.tx - e.x));
+          ctx.fillStyle = C.detail;
+          for (const side of [-1, 1]) {
+            ctx.fillRect(-w * 0.32, side * h * 0.42 - h * 0.12, w * 0.18, h * 0.24);
+            ctx.fillRect(w * 0.18, side * h * 0.42 - h * 0.12, w * 0.18, h * 0.24);
+          }
+          ctx.fillStyle = hot ? C.thermal : e.kind === "civilian" ? C.civilian : C.vehicle;
+          ctx.fillRect(-w / 2, -h / 2, w, h);
+          ctx.fillStyle = C.detail;
+          ctx.fillRect(w * 0.16, -h * 0.35, w * 0.15, h * 0.7);
+          ctx.strokeStyle = hot ? C.thermal : C.unit;
+          ctx.lineWidth = Math.max(1, ppm * 0.2);
+          ctx.beginPath(); ctx.moveTo(-w * 0.4, -h * 0.25); ctx.lineTo(w * 0.05, -h * 0.25);
+          ctx.moveTo(-w * 0.4, h * 0.25); ctx.lineTo(w * 0.05, h * 0.25); ctx.stroke();
+          ctx.restore();
         } else if (e.kind === "weapon") {
           ctx.beginPath(); ctx.arc(x, y, ppm * 1.4, 0, Math.PI * 2); ctx.fill();
         } else {
-          ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
+          const moving = e.state !== "cover" && e.state !== "engage" && Math.hypot(e.tx - e.x, e.ty - e.y) > 1;
+          const stride = moving ? Math.sin(sim.time * 13 + e.id) * ppm * 0.55 : 0;
+          ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(e.ty - e.y, e.tx - e.x));
+          ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = Math.max(1.3, ppm * 0.3); ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.3, -s * 0.45); ctx.lineTo(-s - stride, -s * 0.75);
+          ctx.moveTo(-s * 0.3, s * 0.45); ctx.lineTo(-s + stride, s * 0.75);
+          ctx.moveTo(s * 0.1, -s * 0.45); ctx.lineTo(stride, -s);
+          ctx.moveTo(s * 0.1, s * 0.45); ctx.lineTo(-stride, s);
+          ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(0, 0, s * 0.7, s * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(s * 0.75, 0, s * 0.4, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
         }
         if (e.state === "engage" && Math.random() < 0.25) {
           ctx.fillStyle = C.warn;

@@ -113,7 +113,7 @@ function loadSector(s: SimState, n: 1 | 2 | 3) {
       const cx = between(s, 150, WORLD - 120), cy = between(s, 120, WORLD - 150);
       s.entities.push({
         id: id++, kind, x: cx, y: cy, hx: cx, hy: cy, tx: cx, ty: cy,
-        hp: HP[kind], state: kind === "civilian" ? "patrol" : "idle",
+        hp: HP[kind], state: kind === "weapon" ? "idle" : "patrol",
         cover: kind !== "vehicle" && kind !== "civilian" && rand(s) < cfg.cover,
         sightT: 0, detectT: 0, detected: false,
       });
@@ -133,7 +133,7 @@ export function createSim(seed: number): SimState {
   return s;
 }
 
-const SPEED: Record<Kind, number> = { infantry: 1.2, spotter: 0.8, officer: 1, weapon: 0, vehicle: 4, civilian: 3 };
+const SPEED: Record<Kind, number> = { infantry: 3.8, spotter: 3.4, officer: 3.2, weapon: 0, vehicle: 8, civilian: 3 };
 const SIGHT: Record<Kind, number> = { infantry: 130, spotter: 200, officer: 110, weapon: 160, vehicle: 90, civilian: 0 };
 const SHOOTS: Record<Kind, number> = { infantry: 0.05, officer: 0.03, weapon: 0.12, spotter: 0, vehicle: 0.04, civilian: 0 };
 
@@ -230,16 +230,19 @@ export function step(s: SimState, input: Input, dt = TICK) {
     }
 
     // movement
-    const sp = SPEED[e.kind] * (e.state === "cover" || e.state === "engage" ? 0 : e.state === "flee" ? 2 : 1);
+    // Vehicles keep driving while engaging; people stop only to fire or take cover.
+    const stopped = e.kind !== "vehicle" && (e.state === "cover" || e.state === "engage");
+    const sp = SPEED[e.kind] * (stopped ? 0 : e.state === "flee" ? 2 : 1);
     if (sp > 0) {
       const tdx = e.tx - e.x, tdy = e.ty - e.y, td = Math.hypot(tdx, tdy);
       if (td < 1) {
-        const range = e.kind === "civilian" || e.kind === "vehicle" ? 160 : 40;
+        const range = e.kind === "civilian" || e.kind === "vehicle" ? 160 : 90;
         e.tx = Math.max(10, Math.min(WORLD - 10, e.hx + between(s, -range, range)));
         e.ty = Math.max(10, Math.min(WORLD - 10, e.hy + between(s, -range, range)));
       } else {
-        e.x += (tdx / td) * sp * dt;
-        e.y += (tdy / td) * sp * dt;
+        const travel = Math.min(td, sp * dt);
+        e.x += (tdx / td) * travel;
+        e.y += (tdy / td) * travel;
       }
     }
 

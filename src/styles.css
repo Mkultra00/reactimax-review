@@ -108,6 +108,12 @@
   --hud-warn: oklch(0.84 0.17 80);
   --hud-danger: oklch(0.66 0.23 27);
   --hud-safe: oklch(0.8 0.12 220);
+  --unit-body: oklch(0.32 0.035 120);
+  --unit-covered: oklch(0.22 0.02 120 / 0.55);
+  --unit-vehicle: oklch(0.43 0.04 120);
+  --unit-civilian: oklch(0.45 0.04 60);
+  --unit-detail: oklch(0.16 0.01 120);
+  --unit-thermal: oklch(0.97 0 0);
 }
 
 @layer base {
