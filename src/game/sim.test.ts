@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { blastDamage, createSim, extractionScore, fallTime, step, strikeScore, START_GRENADES, START_HEALTH, TICK } from "./sim";
+import { AREAS, blastDamage, createSim, extractionScore, fallTime, step, strikeScore, START_GRENADES, START_HEALTH, TICK } from "./sim";
 
 describe("rules", () => {
   it("explosions leave a crater at the impact, even when no target is hit", () => {
@@ -101,6 +101,22 @@ describe("rules", () => {
 });
 
 describe("areas", () => {
+  it("offers Rural, Farmland and Desert alongside the original areas", () => {
+    expect(AREAS).toEqual(["urban", "industrial", "port", "rural", "farmland", "desert"]);
+  });
+  it.each(["rural", "farmland", "desert"] as const)("keeps the chosen %s area through all three sectors", (area) => {
+    const s = createSim(7, area);
+    const input = { mx: 0, my: 0, climb: 0, drop: false };
+    for (const sector of [1, 2, 3]) {
+      expect(s.area).toBe(area);
+      expect(s.sector).toBe(sector);
+      expect(s.entities.some((e) => e.kind === "vehicle")).toBe(true);
+      expect(s.entities.some((e) => e.kind === "infantry")).toBe(true);
+      s.drone.x = s.extraction.x; s.drone.y = s.extraction.y;
+      step(s, input);
+    }
+    expect(s.status).toBe("won");
+  });
   it("uses the chosen area's spawn table", () => {
     const veh = (a: "urban" | "industrial" | "port") => createSim(7, a).entities.filter((e) => e.kind === "vehicle").length;
     expect(createSim(7, "port").area).toBe("port");

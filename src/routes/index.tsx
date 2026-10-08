@@ -5,6 +5,7 @@ import cover from "@/assets/sector-trench.jpg";
 import { preloadRadio } from "@/game/audio";
 import { AREA_INFO } from "@/game/feed";
 import { AREAS, type Area } from "@/game/sim";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,16 +63,17 @@ function Index() {
             <p className="mt-6 font-mono text-xs tracking-widest text-hud">SELECT AREA OF OPERATIONS</p>
             <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Area">
               {AREAS.map((a) => (
-                <button
+                <Button
                   key={a}
+                  variant="ghost"
                   role="radio"
                   aria-checked={area === a}
                   onClick={() => setArea(a)}
-                  className={`overflow-hidden border text-left transition-colors ${area === a ? "border-hud" : "border-border opacity-70 hover:opacity-100"}`}
+                  className={`block h-auto min-w-0 overflow-hidden rounded-none border p-0 text-left transition-colors hover:bg-transparent ${area === a ? "border-hud" : "border-border opacity-70 hover:opacity-100"}`}
                 >
                   <img src={AREA_INFO[a].sectors[1].image} alt="" width={1536} height={1536} loading="lazy" className="aspect-[4/3] w-full object-cover" />
                   <span className={`block px-2 py-1 font-mono text-xs ${area === a ? "text-hud" : "text-muted-foreground"}`}>{AREA_INFO[a].name}</span>
-                </button>
+                </Button>
               ))}
             </div>
             <p className="mt-2 text-xs text-muted-foreground">{AREA_INFO[area].blurb}</p>

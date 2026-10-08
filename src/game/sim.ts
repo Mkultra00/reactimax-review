@@ -94,8 +94,8 @@ function rand(s: SimState) {
 }
 const between = (s: SimState, a: number, b: number) => a + rand(s) * (b - a);
 
-export type Area = "urban" | "industrial" | "port";
-export const AREAS: Area[] = ["urban", "industrial", "port"];
+export type Area = "urban" | "industrial" | "port" | "rural" | "farmland" | "desert";
+export const AREAS: Area[] = ["urban", "industrial", "port", "rural", "farmland", "desert"];
 type SectorCfg = { weather: Weather; spawn: Partial<Record<Kind, number>>; cover: number; jammers: number };
 const AREA_SECTORS: Record<Area, Record<1 | 2 | 3, SectorCfg>> = {
   urban: {
@@ -112,6 +112,21 @@ const AREA_SECTORS: Record<Area, Record<1 | 2 | 3, SectorCfg>> = {
     1: { weather: "clear", spawn: { infantry: 7, spotter: 2, vehicle: 4, civilian: 2 }, cover: 0.3, jammers: 2 },
     2: { weather: "fog", spawn: { infantry: 9, officer: 1, spotter: 2, weapon: 1, vehicle: 3, civilian: 2 }, cover: 0.4, jammers: 2 },
     3: { weather: "dusk", spawn: { infantry: 10, officer: 2, spotter: 2, weapon: 2, vehicle: 4, civilian: 2 }, cover: 0.5, jammers: 3 },
+  },
+  rural: {
+    1: { weather: "clear", spawn: { infantry: 8, spotter: 2, vehicle: 2, civilian: 2 }, cover: 0.75, jammers: 1 },
+    2: { weather: "fog", spawn: { infantry: 9, officer: 1, spotter: 2, weapon: 1, vehicle: 2, civilian: 4 }, cover: 0.65, jammers: 1 },
+    3: { weather: "dusk", spawn: { infantry: 11, officer: 2, spotter: 2, weapon: 1, vehicle: 3, civilian: 2 }, cover: 0.8, jammers: 2 },
+  },
+  farmland: {
+    1: { weather: "clear", spawn: { infantry: 7, spotter: 1, vehicle: 3, civilian: 2 }, cover: 0.15, jammers: 1 },
+    2: { weather: "rain", spawn: { infantry: 9, officer: 1, spotter: 2, weapon: 1, vehicle: 3, civilian: 2 }, cover: 0.3, jammers: 1 },
+    3: { weather: "dusk", spawn: { infantry: 10, officer: 2, spotter: 2, weapon: 2, vehicle: 4, civilian: 1 }, cover: 0.2, jammers: 2 },
+  },
+  desert: {
+    1: { weather: "clear", spawn: { infantry: 7, spotter: 2, vehicle: 4, civilian: 1 }, cover: 0.1, jammers: 1 },
+    2: { weather: "clear", spawn: { infantry: 9, officer: 1, spotter: 2, weapon: 1, vehicle: 3, civilian: 3 }, cover: 0.35, jammers: 2 },
+    3: { weather: "dusk", spawn: { infantry: 10, officer: 2, spotter: 2, weapon: 2, vehicle: 4, civilian: 1 }, cover: 0.25, jammers: 2 },
   },
 };
 
