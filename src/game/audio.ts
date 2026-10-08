@@ -2,14 +2,44 @@
 import { RADIO_CLIPS, radioCallForEvent, shouldPlay, type RadioCall } from "./radio";
 const lastThreat = new Map<RadioCall, number>();
 import type { SimEvent } from "./sim";
+import { RECON_CLIPS } from "./reconClips";
+import type { ReconReport } from "./recon";
 
 let ctx: AudioContext | null = null;
 let hum: OscillatorNode | null = null;
 let radioDownload: Promise<[RadioCall, ArrayBuffer][]> | null = null;
 const radioBuffers = new Map<RadioCall, AudioBuffer>();
 const activeRadio = new Set<AudioBufferSourceNode>();
+const reconBuffers = new Map<string, AudioBuffer>();
+let activeRecon: AudioBufferSourceNode | null = null;
+let reconDownload: Promise<[string, ArrayBuffer][]> | null = null;
+
+function preloadRecon() {
+  if (!reconDownload) reconDownload = Promise.all(Object.entries(RECON_CLIPS).flatMap(([kind, directions]) =>
+    Object.entries(directions).map(async ([direction, url]): Promise<[string, ArrayBuffer]> => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Recon radio clip failed [${response.status}]`);
+      return [`${kind}:${direction}`, await response.arrayBuffer()];
+    })));
+  return reconDownload;
+}
+
+export function radioRecon(report: ReconReport): boolean {
+  if (!ctx || ctx.state !== "running" || document.hidden || activeRadio.size || activeRecon) return false;
+  const buffer = reconBuffers.get(`${report.kind}:${report.direction}`);
+  if (!buffer) return false;
+  const source = ctx.createBufferSource(), gain = ctx.createGain();
+  source.buffer = buffer; gain.gain.value = 0.8;
+  source.connect(gain).connect(ctx.destination);
+  activeRecon = source;
+  source.onended = () => { if (activeRecon === source) activeRecon = null; source.disconnect(); gain.disconnect(); };
+  noise(0.07, 0.035);
+  source.start();
+  return true;
+}
 
 export function preloadRadio() {
+  void preloadRecon().catch((error: unknown) => { reconDownload = null; console.error("Recon audio unavailable:", error); });
   if (!radioDownload) {
     radioDownload = Promise.all(Object.entries(RADIO_CLIPS).map(async ([call, url]) => {
       const response = await fetch(url);
@@ -26,6 +56,7 @@ export function radioEvent(event: SimEvent) {
   const buffer = radioBuffers.get(call);
   if (!buffer) return; // Never play a delayed callout against a later game event.
   if (!shouldPlay(call, ctx.currentTime, lastThreat)) return;
+  activeRecon?.stop(); activeRecon = null;
   const source = ctx.createBufferSource();
   const gain = ctx.createGain();
   source.buffer = buffer; gain.gain.value = 0.8;
@@ -40,6 +71,11 @@ export function unlockAudio() {
   if (!ctx) ctx = new AudioContext();
   void ctx.resume();
   const audioContext = ctx;
+  void preloadRecon().then(async clips => {
+    await Promise.all(clips.map(async ([key, bytes]) => {
+      if (!reconBuffers.has(key)) reconBuffers.set(key, await audioContext.decodeAudioData(bytes.slice(0)));
+    }));
+  }).catch((error: unknown) => { reconDownload = null; console.error("Recon audio unavailable:", error); });
   void preloadRadio().then(async (clips) => {
     await Promise.all(clips.map(async ([call, bytes]) => {
       if (!radioBuffers.has(call)) radioBuffers.set(call, await audioContext.decodeAudioData(bytes.slice(0)));
@@ -56,6 +92,8 @@ export function unlockAudio() {
   }
 }
 export function stopAudio() {
+  activeRecon?.stop(); activeRecon = null;
+  lastThreat.clear();
   hum?.stop(); hum = null;
   for (const source of activeRadio) source.stop();
   activeRadio.clear();

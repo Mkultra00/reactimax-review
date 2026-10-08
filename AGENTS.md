@@ -15,3 +15,4 @@
 - The video feed sits behind `src/game/feed.ts` so a generative backend (Reactor FastH3 or a steerable model) can replace the procedural feed without touching the sim.
 - Area selections use the shared simulation `Area` type across spawn tables, sector imagery and live-feed scene descriptions so new environments remain consistent across both feeds.
 - Radio speech is generated once with ElevenLabs, stored as CDN asset pointers and preloaded for sim-event playback; no live speech requests are made during gameplay, avoiding latency and repeat generation costs.
+- Off-screen radio reports read living non-civilian units against the actual canvas bounds; throttle reports and let combat calls interrupt them so guidance stays current without changing game outcomes.

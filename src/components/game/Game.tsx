@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { consumeEvents, createSim, sensorRadius, step, TICK, WORLD, type SimState, type Input, type Area } from "@/game/sim";
 import { loadSectorImages, AREA_INFO } from "@/game/feed";
-import { sfx, unlockAudio, stopAudio, radioEvent } from "@/game/audio";
+import { sfx, unlockAudio, stopAudio, radioEvent, radioRecon } from "@/game/audio";
+import { createReconMemory, offscreenReport, markReconReported } from "@/game/recon";
 import { LiveFeed, type FeedStatus } from "@/game/liveFeed";
 
 export interface RunResult { score: number; kills: number; sector: number; won: boolean; reason?: string | undefined; time: number }
@@ -45,6 +46,7 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
     const sim: SimState = createSim((Math.random() * 2 ** 31) | 0, area);
+    const reconMemory = createReconMemory();
     const SECTOR_INFO = AREA_INFO[area].sectors;
     let imgs: Record<1 | 2 | 3, HTMLImageElement> | null = null;
     loadSectorImages(area).then((i) => (imgs = i));
@@ -143,6 +145,8 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
           }
         }
       }
+      const report = offscreenReport(sim, canvas.clientWidth, canvas.clientHeight, reconMemory);
+      if (report && radioRecon(report)) markReconReported(sim, report, reconMemory);
       render(dt);
       if (sim.status !== "playing" && !ended) {
         ended = true;
