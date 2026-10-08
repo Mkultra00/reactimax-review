@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { consumeEvents, createSim, sensorRadius, step, TICK, WORLD, type SimState, type Input, type Area } from "@/game/sim";
+import { consumeEvents, createSim, sensorRadius, step, canReturnToBase, returnToBase, TICK, WORLD, type SimState, type Input, type Area } from "@/game/sim";
+import { Button } from "@/components/ui/button";
 import { loadSectorImages, AREA_INFO } from "@/game/feed";
 import { sfx, unlockAudio, stopAudio, radioEvent, radioRecon } from "@/game/audio";
 import { createReconMemory, offscreenReport, markReconReported } from "@/game/recon";
 import { LiveFeed, type FeedStatus } from "@/game/liveFeed";
 
-export interface RunResult { score: number; kills: number; sector: number; won: boolean; reason?: string | undefined; time: number }
+export interface RunResult { score: number; kills: number; sector: number; won: boolean; returned?: boolean; reason?: string | undefined; time: number }
 
 type Floater = { x: number; y: number; text: string; t: number; bad: boolean };
 type Blast = { x: number; y: number; t: number };
@@ -20,6 +21,8 @@ const LABEL: Record<string, string> = {
 
 export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Area }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const simRef = useRef<SimState | null>(null);
+  const [returnState, setReturnState] = useState<"hidden" | "waiting" | "ready">("hidden");
   const keys = useRef(new Set<string>());
   const touch = useRef({ mx: 0, my: 0, climb: 0, drop: false });
   const [thermal, setThermal] = useState(false);
@@ -46,6 +49,8 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
     const sim: SimState = createSim((Math.random() * 2 ** 31) | 0, area);
+    simRef.current = sim;
+    let previousReturnState = "hidden";
     const reconMemory = createReconMemory();
     const SECTOR_INFO = AREA_INFO[area].sectors;
     let imgs: Record<1 | 2 | 3, HTMLImageElement> | null = null;
@@ -147,10 +152,15 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
       }
       const report = offscreenReport(sim, canvas.clientWidth, canvas.clientHeight, reconMemory);
       if (report && radioRecon(report)) markReconReported(sim, report, reconMemory);
+      const nextReturnState = sim.status === "playing" && sim.drone.grenades === 0 ? (canReturnToBase(sim) ? "ready" : "waiting") : "hidden";
+      if (nextReturnState !== previousReturnState) {
+        previousReturnState = nextReturnState;
+        setReturnState(nextReturnState);
+      }
       render(dt);
       if (sim.status !== "playing" && !ended) {
         ended = true;
-        setTimeout(() => onEnd({ score: sim.score, kills: sim.kills, sector: sim.sector, won: sim.status === "won", reason: sim.lostReason, time: sim.time }), 900);
+        setTimeout(() => onEnd({ score: sim.score, kills: sim.kills, sector: sim.sector, won: sim.status === "won", returned: sim.status === "returned", reason: sim.lostReason, time: sim.time }), 900);
       }
       raf = requestAnimationFrame(frame);
     };
@@ -439,6 +449,7 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
 
     raf = requestAnimationFrame(frame);
     return () => {
+      simRef.current = null;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", kd);
@@ -456,6 +467,15 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-background">
       <canvas ref={canvasRef} className="h-full w-full touch-none" />
+      {returnState !== "hidden" && (
+        <Button
+          className="absolute left-1/2 top-24 -translate-x-1/2 font-mono"
+          disabled={returnState !== "ready"}
+          onClick={() => { const sim = simRef.current; if (sim) returnToBase(sim); }}
+        >
+          Return to Base
+        </Button>
+      )}
       {/* Reactor FastH3 live ISR inset */}
       <div className="absolute right-4 top-20 flex w-[min(42vw,420px)] flex-col items-end gap-1">
         <button

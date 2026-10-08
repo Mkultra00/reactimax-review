@@ -95,8 +95,8 @@ function Index() {
         ) : (
           result && (
             <>
-              <p className={`font-mono text-xs tracking-widest ${result.won ? "text-hud" : "text-hud-danger"}`}>
-                {result.won ? "MISSION COMPLETE" : `MISSION FAILED // ${result.reason?.toUpperCase()}`}
+              <p className={`font-mono text-xs tracking-widest ${result.won || result.returned ? "text-hud" : "text-hud-danger"}`}>
+                {result.returned ? "RETURNED TO BASE" : result.won ? "MISSION COMPLETE" : `MISSION FAILED // ${result.reason?.toUpperCase()}`}
               </p>
               <h1 className="mt-2 font-display text-7xl font-bold text-foreground">{result.score}</h1>
               <dl className="mt-6 grid grid-cols-3 gap-4 font-mono text-xs">
