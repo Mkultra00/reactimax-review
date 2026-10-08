@@ -99,3 +99,13 @@ describe("rules", () => {
     expect(s.kills).toBe(1);
   });
 });
+
+describe("areas", () => {
+  it("uses the chosen area's spawn table", () => {
+    const veh = (a: "urban" | "industrial" | "port") => createSim(7, a).entities.filter((e) => e.kind === "vehicle").length;
+    expect(createSim(7, "port").area).toBe("port");
+    expect(veh("urban")).toBe(2);
+    expect(veh("industrial")).toBe(4);
+    expect(veh("port")).toBe(4);
+  });
+});
