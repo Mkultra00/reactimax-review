@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Game, type RunResult } from "@/components/game/Game";
 import cover from "@/assets/sector-trench.jpg";
 import { preloadRadio } from "@/game/audio";
+import { AREA_INFO } from "@/game/feed";
+import { AREAS, type Area } from "@/game/sim";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,6 +27,7 @@ function Index() {
   const [adult, setAdult] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
   const [best, setBest] = useState(0);
+  const [area, setArea] = useState<Area>("urban");
 
   useEffect(() => {
     setBest(Number(localStorage.getItem("ow-best") || 0));
@@ -41,11 +44,11 @@ function Index() {
     });
   }, []);
 
-  if (phase === "play") return <Game onEnd={onEnd} />;
+  if (phase === "play") return <Game onEnd={onEnd} area={area} />;
 
   return (
     <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-background px-6 py-12">
-      <img src={cover} alt="" width={1536} height={1536} className="feed-backdrop absolute inset-0 h-full w-full object-cover" />
+      <img src={phase === "start" ? AREA_INFO[area].sectors[1].image : cover} alt="" width={1536} height={1536} className="feed-backdrop absolute inset-0 h-full w-full object-cover" />
       <div className="scanlines absolute inset-0" />
       <section className="panel relative w-full max-w-lg p-8">
         {phase === "start" ? (
@@ -56,6 +59,22 @@ function Index() {
               Fly a recon drone across three sectors. Identify targets, drop grenades, avoid fire and reach extraction before the battery dies.
               Civilian vehicles are no-strike: −500.
             </p>
+            <p className="mt-6 font-mono text-xs tracking-widest text-hud">SELECT AREA OF OPERATIONS</p>
+            <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Area">
+              {AREAS.map((a) => (
+                <button
+                  key={a}
+                  role="radio"
+                  aria-checked={area === a}
+                  onClick={() => setArea(a)}
+                  className={`overflow-hidden border text-left transition-colors ${area === a ? "border-hud" : "border-border opacity-70 hover:opacity-100"}`}
+                >
+                  <img src={AREA_INFO[a].sectors[1].image} alt="" width={1536} height={1536} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+                  <span className={`block px-2 py-1 font-mono text-xs ${area === a ? "text-hud" : "text-muted-foreground"}`}>{AREA_INFO[a].name}</span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">{AREA_INFO[area].blurb}</p>
             <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs text-muted-foreground">
               <li>WASD · move</li><li>Q / E · altitude</li><li>SPACE · drop</li><li>R · thermal</li>
             </ul>
