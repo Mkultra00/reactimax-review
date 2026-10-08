@@ -184,7 +184,7 @@ export function step(s: SimState, input: Input, dt = TICK) {
       const dmg = blastDamage(dist);
       if (dmg <= 0) continue;
       e.hp -= dmg;
-      if (e.state !== "dead" && e.kind !== "civilian" && e.kind !== "vehicle" && e.kind !== "weapon") e.state = "cover";
+      if (e.kind !== "civilian" && e.kind !== "vehicle" && e.kind !== "weapon") e.state = "cover";
       if (e.hp <= 0) {
         e.state = "dead";
         kills++;

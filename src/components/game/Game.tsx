@@ -3,7 +3,7 @@ import { consumeEvents, createSim, sensorRadius, step, TICK, WORLD, type SimStat
 import { loadSectorImages, SECTOR_INFO } from "@/game/feed";
 import { sfx, unlockAudio, stopAudio } from "@/game/audio";
 
-export interface RunResult { score: number; kills: number; sector: number; won: boolean; reason?: string; time: number }
+export interface RunResult { score: number; kills: number; sector: number; won: boolean; reason?: string | undefined; time: number }
 
 type Floater = { x: number; y: number; text: string; t: number; bad: boolean };
 type Blast = { x: number; y: number; t: number };
@@ -174,7 +174,7 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
         ctx.fillStyle = `oklch(0.4 0 0 / ${Math.max(0, 0.6 - b.t * 0.3)})`;
         ctx.beginPath(); ctx.arc(sx(b.x), sy(b.y), r, 0, Math.PI * 2); ctx.fill();
       }
-      while (blasts.length && blasts[0].t > 2.5) blasts.shift();
+      while (blasts.length && blasts[0]!.t > 2.5) blasts.shift();
 
       // grain, scanlines, vignette
       ctx.globalAlpha = 1;
@@ -215,7 +215,7 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
         ctx.strokeStyle = civ ? C.safe : e.state === "engage" ? C.danger : C.hud;
         const c = b / 3;
         ctx.beginPath();
-        for (const [ox, oy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        for (const [ox, oy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
           const cx = x + (ox * b) / 2, cy = y + (oy * b) / 2;
           ctx.moveTo(cx, cy - oy * c); ctx.lineTo(cx, cy); ctx.lineTo(cx - ox * c, cy);
         }
@@ -273,7 +273,7 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
         ctx.fillText(f.text, sx(f.x) + 10, sy(f.y) - f.t * 30);
       }
       ctx.globalAlpha = 1;
-      while (floaters.length && floaters[0].t > 2) floaters.shift();
+      while (floaters.length && floaters[0]!.t > 2) floaters.shift();
 
       // corners: telemetry
       ctx.font = "600 12px 'JetBrains Mono', monospace";
