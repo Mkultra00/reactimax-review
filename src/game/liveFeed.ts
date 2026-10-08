@@ -1,14 +1,18 @@
 // Reactor FastH3 live feed. Read-only consumer of sim context/events — never writes back to the sim.
 import { getReactorToken } from "@/lib/reactor.functions";
+import type { Area } from "@/game/sim";
 
 export type FeedStatus = "off" | "connecting" | "buffering" | "live" | "error";
-export interface FeedContext { area: "urban" | "industrial" | "port"; sector: 1 | 2 | 3; weather: string; alt: number; heading: string; thermal: boolean }
+export interface FeedContext { area: Area; sector: 1 | 2 | 3; weather: string; alt: number; heading: string; thermal: boolean }
 
 // Fictional setting keeps prompts away from real-conflict refusals.
 const SCENE: Record<FeedContext["area"], Record<1 | 2 | 3, string>> = {
   urban: { 1: "dense apartment blocks with narrow streets and parked cars", 2: "a city square with a fountain and tram lines", 3: "a damaged city district with rubble-strewn boulevards" },
   industrial: { 1: "warehouse roofs, truck yards and rail sidings", 2: "a refinery with round storage tanks and pipe racks", 3: "a derelict factory complex with smokestacks and scrap piles" },
   port: { 1: "a container terminal with stacked shipping containers and gantry cranes", 2: "harbor docks with piers and moored fishing boats", 3: "a shipyard with a dry dock and cranes" },
+  rural: { 1: "dense temperate forest with winding dirt trails and grassy clearings", 2: "a small rural village with tiled-roof cottages, gardens and lanes surrounded by woodland", 3: "woodland hamlets beside a narrow stream, a small bridge and forest roads" },
+  farmland: { 1: "wide open crop fields divided by hedgerows and intersecting tractor tracks", 2: "pastures and ploughed fields around a farmyard with barns and silos", 3: "broad harvested fields, meadows, hay bales and irrigation ditches beside dirt crossroads" },
+  desert: { 1: "arid sand dunes and gravel tracks across open flats with scattered rocks and scrub", 2: "an isolated desert settlement of flat-roof adobe buildings around dusty road junctions", 3: "a rocky desert plateau with a winding dry riverbed, gravel roads and sand flats" },
 };
 const WEATHER: Record<string, string> = {
   clear: "clear overcast daylight", fog: "thick low fog drifting", dusk: "dim blue dusk light", rain: "light rain",

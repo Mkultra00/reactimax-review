@@ -11,6 +11,15 @@ import i3 from "@/assets/area-industrial-3.jpg";
 import p1 from "@/assets/area-port-1.jpg";
 import p2 from "@/assets/area-port-2.jpg";
 import p3 from "@/assets/area-port-3.jpg";
+import r1 from "@/assets/area-rural-1.jpg";
+import r2 from "@/assets/area-rural-2.jpg";
+import r3 from "@/assets/area-rural-3.jpg";
+import f1 from "@/assets/area-farmland-1.jpg";
+import f2 from "@/assets/area-farmland-2.jpg";
+import f3 from "@/assets/area-farmland-3.jpg";
+import d1 from "@/assets/area-desert-1.jpg";
+import d2 from "@/assets/area-desert-2.jpg";
+import d3 from "@/assets/area-desert-3.jpg";
 
 type Info = { name: string; image: string };
 export const AREA_INFO: Record<Area, { name: string; blurb: string; sectors: Record<1 | 2 | 3, Info> }> = {
@@ -25,6 +34,18 @@ export const AREA_INFO: Record<Area, { name: string; blurb: string; sectors: Rec
   port: {
     name: "PORT", blurb: "Open quays, convoys and strong jamming.",
     sectors: { 1: { name: "CONTAINER TERMINAL", image: p1 }, 2: { name: "FISHING DOCKS", image: p2 }, 3: { name: "SHIPYARD", image: p3 } },
+  },
+  rural: {
+    name: "RURAL", blurb: "Dense forests, small villages and concealed patrols.",
+    sectors: { 1: { name: "FOREST TRAILS", image: r1 }, 2: { name: "SMALL VILLAGE", image: r2 }, 3: { name: "WOODLAND HAMLETS", image: r3 } },
+  },
+  farmland: {
+    name: "FARMLAND", blurb: "Open fields, farmyards and exposed vehicle routes.",
+    sectors: { 1: { name: "OPEN FIELDS", image: f1 }, 2: { name: "FARMYARD", image: f2 }, 3: { name: "HARVEST PLAINS", image: f3 } },
+  },
+  desert: {
+    name: "DESERT", blurb: "Sand flats, isolated settlements and rocky dry riverbeds.",
+    sectors: { 1: { name: "DUNE TRACKS", image: d1 }, 2: { name: "DESERT SETTLEMENT", image: d2 }, 3: { name: "DRY RIVERBED", image: d3 } },
   },
 };
 
