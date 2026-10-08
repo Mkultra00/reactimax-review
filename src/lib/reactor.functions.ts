@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 
 // Mints a short-lived, FastH3-only, single-session token. The rk_ key never leaves the server.
 export const getReactorToken = createServerFn({ method: "POST" }).handler(async () => {
-  const apiKey = process.env.REACTOR_API_KEY;
+  const apiKey = process.env['REACTOR_API_KEY'];
   if (!apiKey) throw new Error("Live feed is not configured");
   const res = await fetch("https://api.reactor.inc/tokens", {
     method: "POST",

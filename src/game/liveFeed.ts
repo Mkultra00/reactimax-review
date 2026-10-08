@@ -66,8 +66,8 @@ export class LiveFeed {
     this.ahead++;
     try {
       const data: Record<string, unknown> = { prompt, metadata: urgent ? "event" : "bg" };
-      if (urgent) data.position = 0;
-      else if (this.lastClip) data.continue_from_clip_id = this.lastClip;
+      if (urgent) data['position'] = 0;
+      else if (this.lastClip) data['continue_from_clip_id'] = this.lastClip;
       const reply: any = await this.reactor.sendCommand("enqueue", data);
       const id = reply?.data?.clip?.clip_id;
       if (id && !urgent) this.lastClip = id;
