@@ -4,9 +4,10 @@ const lastThreat = new Map<RadioCall, number>();
 import type { SimEvent } from "./sim";
 import { RECON_CLIPS } from "./reconClips";
 import type { ReconReport } from "./recon";
+import { createRotorSound } from "./rotor";
 
 let ctx: AudioContext | null = null;
-let hum: OscillatorNode | null = null;
+let rotor: ReturnType<typeof createRotorSound> | null = null;
 let radioDownload: Promise<[RadioCall, ArrayBuffer][]> | null = null;
 const radioBuffers = new Map<RadioCall, AudioBuffer>();
 const activeRadio = new Set<AudioBufferSourceNode>();
@@ -81,20 +82,15 @@ export function unlockAudio() {
       if (!radioBuffers.has(call)) radioBuffers.set(call, await audioContext.decodeAudioData(bytes.slice(0)));
     }));
   }).catch((error: unknown) => { radioDownload = null; console.error("Radio audio unavailable:", error); });
-  if (!hum) {
-    hum = ctx.createOscillator();
-    const g = ctx.createGain();
-    hum.type = "sawtooth";
-    hum.frequency.value = 118;
-    g.gain.value = 0.012;
-    hum.connect(g).connect(ctx.destination);
-    hum.start();
-  }
+  if (!rotor) rotor = createRotorSound(ctx);
+}
+export function updateDroneAudio(movement: number, climb: number, flying: boolean) {
+  rotor?.update(movement, climb, !flying || document.hidden);
 }
 export function stopAudio() {
   activeRecon?.stop(); activeRecon = null;
   lastThreat.clear();
-  hum?.stop(); hum = null;
+  rotor?.stop(); rotor = null;
   for (const source of activeRadio) source.stop();
   activeRadio.clear();
 }
