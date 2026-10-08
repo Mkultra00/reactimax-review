@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { consumeEvents, createSim, sensorRadius, step, TICK, WORLD, type SimState, type Input } from "@/game/sim";
 import { loadSectorImages, SECTOR_INFO } from "@/game/feed";
-import { sfx, unlockAudio, stopAudio } from "@/game/audio";
+import { sfx, unlockAudio, stopAudio, radioEvent } from "@/game/audio";
 import { LiveFeed, type FeedStatus } from "@/game/liveFeed";
 
 export interface RunResult { score: number; kills: number; sector: number; won: boolean; reason?: string | undefined; time: number }
@@ -124,6 +124,7 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
           lf.ctx = { sector: sim.sector, weather: sim.weather, alt: d.alt, heading, thermal: thermalRef.current };
         }
         for (const ev of consumeEvents(sim)) {
+          radioEvent(ev);
           if (ev.type === "grenade_impact") lf?.impact();
           if (ev.type === "sector_cleared") lf?.sectorChanged();
           if (ev.type === "grenade_dropped") sfx.drop();

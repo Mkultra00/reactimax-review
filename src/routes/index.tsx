@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { Game, type RunResult } from "@/components/game/Game";
 import cover from "@/assets/sector-trench.jpg";
+import { preloadRadio } from "@/game/audio";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,7 +26,10 @@ function Index() {
   const [result, setResult] = useState<RunResult | null>(null);
   const [best, setBest] = useState(0);
 
-  useEffect(() => setBest(Number(localStorage.getItem("ow-best") || 0)), []);
+  useEffect(() => {
+    setBest(Number(localStorage.getItem("ow-best") || 0));
+    void preloadRadio().catch((error: unknown) => console.error("Radio preload unavailable:", error));
+  }, []);
 
   const onEnd = useCallback((r: RunResult) => {
     setResult(r);
