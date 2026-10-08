@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { consumeEvents, createSim, sensorRadius, step, TICK, WORLD, type SimState, type Input } from "@/game/sim";
 import { loadSectorImages, SECTOR_INFO } from "@/game/feed";
 import { sfx, unlockAudio, stopAudio } from "@/game/audio";
+import { LiveFeed, type FeedStatus } from "@/game/liveFeed";
 
 export interface RunResult { score: number; kills: number; sector: number; won: boolean; reason?: string | undefined; time: number }
 
@@ -23,6 +24,21 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
   const [thermal, setThermal] = useState(false);
   const thermalRef = useRef(false);
   thermalRef.current = thermal;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const feedRef = useRef<LiveFeed | null>(null);
+  const [live, setLive] = useState(false);
+  const [feedStatus, setFeedStatus] = useState<FeedStatus>("off");
+  const [feedMsg, setFeedMsg] = useState("");
+
+  useEffect(() => {
+    if (!live) return;
+    const f = new LiveFeed(videoRef.current!, (s, m) => { setFeedStatus(s); setFeedMsg(m ?? ""); });
+    feedRef.current = f;
+    void f.start();
+    const vis = () => f.setPaused(document.hidden);
+    document.addEventListener("visibilitychange", vis);
+    return () => { document.removeEventListener("visibilitychange", vis); feedRef.current = null; void f.stop(); };
+  }, [live]);
 
   useEffect(() => {
     unlockAudio();
@@ -84,6 +100,14 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
       return { mx: len > 1 ? mx / len : mx, my: len > 1 ? my / len : my, climb: Math.max(-1, Math.min(1, climb)), drop };
     };
 
+    const readInputPeek = () => {
+      const k = keys.current, t = touch.current;
+      return {
+        mx: (k.has("d") || k.has("arrowright") ? 1 : 0) - (k.has("a") || k.has("arrowleft") ? 1 : 0) + t.mx,
+        my: (k.has("s") || k.has("arrowdown") ? 1 : 0) - (k.has("w") || k.has("arrowup") ? 1 : 0) + t.my,
+      };
+    };
+
     const frame = (now: number) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
@@ -91,7 +115,15 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
       while (acc >= TICK) {
         step(sim, readInput());
         acc -= TICK;
+        const lf = feedRef.current;
+        if (lf) {
+          const d = sim.drone, i = readInputPeek();
+          const heading = Math.abs(i.mx) + Math.abs(i.my) < 0.1 ? "in a slow hover" : `${i.my < -0.3 ? "north" : i.my > 0.3 ? "south" : ""}${i.mx > 0.3 ? "east" : i.mx < -0.3 ? "west" : ""}`;
+          lf.ctx = { sector: sim.sector, weather: sim.weather, alt: d.alt, heading, thermal: thermalRef.current };
+        }
         for (const ev of consumeEvents(sim)) {
+          if (ev.type === "grenade_impact") lf?.impact();
+          if (ev.type === "sector_cleared") lf?.sectorChanged();
           if (ev.type === "grenade_dropped") sfx.drop();
           if (ev.type === "grenade_impact") { sfx.impact(); blasts.push({ x: ev.x, y: ev.y, t: 0 }); shake = 0.4; }
           if (ev.type === "target_detected") sfx.detect();
@@ -351,6 +383,23 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-background">
       <canvas ref={canvasRef} className="h-full w-full touch-none" />
+      {/* Reactor FastH3 live ISR inset */}
+      <div className="absolute right-4 top-20 flex w-[min(42vw,420px)] flex-col items-end gap-1">
+        <button
+          onClick={() => setLive((v) => !v)}
+          className="rounded-sm border border-border bg-background/70 px-2 py-1 font-mono text-[11px] tracking-widest text-foreground hover:bg-background"
+        >
+          {live ? "■ LIVE FEED OFF" : "● LIVE FEED (FastH3)"}
+        </button>
+        {live && (
+          <div className="relative aspect-video w-full overflow-hidden rounded-sm border border-border bg-background/80">
+            <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
+            <div className="absolute left-2 top-1 font-mono text-[10px] tracking-widest text-foreground">
+              {feedStatus === "live" ? "● LIVE · ISR" : feedStatus === "error" ? `FEED ERROR · ${feedMsg}` : `${feedStatus.toUpperCase()}…`}
+            </div>
+          </div>
+        )}
+      </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-4 hidden justify-center font-mono text-xs text-muted-foreground md:flex">
         WASD move · Q/E altitude · SPACE drop · R thermal
       </div>

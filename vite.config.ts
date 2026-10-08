@@ -12,4 +12,6 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Reactor SDK loads its wasm relative to its own file; pre-bundling breaks that path.
+  vite: { optimizeDeps: { exclude: ["@reactor-team/js-sdk"], include: ["@reactor-team/js-sdk > awaitqueue", "@reactor-team/js-sdk > hls.js", "@reactor-team/js-sdk > mp4box"] } },
 });
