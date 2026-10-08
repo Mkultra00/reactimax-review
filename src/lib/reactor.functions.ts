@@ -10,7 +10,7 @@ export const getReactorToken = createServerFn({ method: "POST" }).handler(async 
     body: JSON.stringify({
       expires_after: 900,
       authorization_details: [
-        { type: "session", resources: { models: { match: ["reactor/fast-h3"] } }, max_sessions: 1 },
+        { type: "session", resources: { models: { match: ["reactor/fast-h3"] } }, constraints: { max_sessions: 1 } },
       ],
     }),
   });
