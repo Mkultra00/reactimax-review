@@ -12,3 +12,4 @@
 ## Architecture
 - Game outcomes live only in `src/game/sim.ts` (pure, seeded, fixed 20 Hz step); rendering, audio and video feed read sim state/events and never write back — keeps scoring fair and unit-testable.
 - The video feed sits behind `src/game/feed.ts` so a generative backend (Reactor FastH3 or a steerable model) can replace the procedural feed without touching the sim.
+- Radio speech is generated once with ElevenLabs, stored as CDN asset pointers and preloaded for sim-event playback; no live speech requests are made during gameplay, avoiding latency and repeat generation costs.
