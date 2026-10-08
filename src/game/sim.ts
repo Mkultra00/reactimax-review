@@ -55,6 +55,7 @@ export interface SimState {
   time: number;
   seed: number;
   rng: number;
+  area: Area;
   sector: 1 | 2 | 3;
   weather: Weather;
   wind: { x: number; y: number };
@@ -92,14 +93,29 @@ function rand(s: SimState) {
 }
 const between = (s: SimState, a: number, b: number) => a + rand(s) * (b - a);
 
-const SECTORS: Record<1 | 2 | 3, { weather: Weather; spawn: Partial<Record<Kind, number>>; cover: number; jammers: number }> = {
-  1: { weather: "clear", spawn: { infantry: 8, spotter: 1, vehicle: 2, civilian: 2 }, cover: 0.2, jammers: 1 },
-  2: { weather: "fog", spawn: { infantry: 10, officer: 1, spotter: 2, weapon: 2, vehicle: 1, civilian: 1 }, cover: 0.6, jammers: 2 },
-  3: { weather: "dusk", spawn: { infantry: 10, officer: 2, spotter: 2, weapon: 1, vehicle: 2, civilian: 3 }, cover: 0.5, jammers: 2 },
+export type Area = "urban" | "industrial" | "port";
+export const AREAS: Area[] = ["urban", "industrial", "port"];
+type SectorCfg = { weather: Weather; spawn: Partial<Record<Kind, number>>; cover: number; jammers: number };
+const AREA_SECTORS: Record<Area, Record<1 | 2 | 3, SectorCfg>> = {
+  urban: {
+    1: { weather: "clear", spawn: { infantry: 8, spotter: 2, vehicle: 2, civilian: 4 }, cover: 0.5, jammers: 1 },
+    2: { weather: "fog", spawn: { infantry: 10, officer: 1, spotter: 2, weapon: 1, vehicle: 1, civilian: 4 }, cover: 0.6, jammers: 2 },
+    3: { weather: "dusk", spawn: { infantry: 11, officer: 2, spotter: 2, weapon: 1, vehicle: 2, civilian: 3 }, cover: 0.7, jammers: 2 },
+  },
+  industrial: {
+    1: { weather: "clear", spawn: { infantry: 7, spotter: 1, weapon: 1, vehicle: 4, civilian: 1 }, cover: 0.4, jammers: 1 },
+    2: { weather: "fog", spawn: { infantry: 9, officer: 1, spotter: 2, weapon: 2, vehicle: 3, civilian: 1 }, cover: 0.5, jammers: 2 },
+    3: { weather: "dusk", spawn: { infantry: 10, officer: 2, spotter: 2, weapon: 2, vehicle: 3, civilian: 1 }, cover: 0.6, jammers: 3 },
+  },
+  port: {
+    1: { weather: "clear", spawn: { infantry: 7, spotter: 2, vehicle: 4, civilian: 2 }, cover: 0.3, jammers: 2 },
+    2: { weather: "fog", spawn: { infantry: 9, officer: 1, spotter: 2, weapon: 1, vehicle: 3, civilian: 2 }, cover: 0.4, jammers: 2 },
+    3: { weather: "dusk", spawn: { infantry: 10, officer: 2, spotter: 2, weapon: 2, vehicle: 4, civilian: 2 }, cover: 0.5, jammers: 3 },
+  },
 };
 
 function loadSector(s: SimState, n: 1 | 2 | 3) {
-  const cfg = SECTORS[n];
+  const cfg = AREA_SECTORS[s.area][n];
   s.sector = n;
   s.weather = cfg.weather;
   s.wind = { x: between(s, -1.5, 1.5), y: between(s, -1.5, 1.5) };
@@ -124,9 +140,9 @@ function loadSector(s: SimState, n: 1 | 2 | 3) {
   s.jammers = Array.from({ length: cfg.jammers }, () => ({ x: between(s, 150, 450), y: between(s, 150, 450), r: 70 }));
 }
 
-export function createSim(seed: number): SimState {
+export function createSim(seed: number, area: Area = "urban"): SimState {
   const s: SimState = {
-    time: 0, seed, rng: seed >>> 0, sector: 1, weather: "clear", wind: { x: 0, y: 0 },
+    time: 0, seed, rng: seed >>> 0, area, sector: 1, weather: "clear", wind: { x: 0, y: 0 },
     drone: { x: 0, y: 0, alt: 60, vx: 0, vy: 0, battery: 100, health: START_HEALTH, signal: 1, grenades: START_GRENADES },
     entities: [], grenades: [], craters: [], jammers: [], extraction: { x: 0, y: 0 },
     score: 0, kills: 0, status: "playing", events: [], invuln: 0, dropCooldown: 0,

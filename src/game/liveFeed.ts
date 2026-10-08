@@ -2,13 +2,13 @@
 import { getReactorToken } from "@/lib/reactor.functions";
 
 export type FeedStatus = "off" | "connecting" | "buffering" | "live" | "error";
-export interface FeedContext { sector: 1 | 2 | 3; weather: string; alt: number; heading: string; thermal: boolean }
+export interface FeedContext { area: "urban" | "industrial" | "port"; sector: 1 | 2 | 3; weather: string; alt: number; heading: string; thermal: boolean }
 
 // Fictional setting keeps prompts away from real-conflict refusals.
-const SCENE: Record<1 | 2 | 3, string> = {
-  1: "open farmland with muddy tractor tracks and scattered hay bales",
-  2: "a forest tree line with zig-zag earthwork trenches and fallen logs",
-  3: "a ruined stone village with collapsed roofs and rubble-strewn streets",
+const SCENE: Record<FeedContext["area"], Record<1 | 2 | 3, string>> = {
+  urban: { 1: "dense apartment blocks with narrow streets and parked cars", 2: "a city square with a fountain and tram lines", 3: "a damaged city district with rubble-strewn boulevards" },
+  industrial: { 1: "warehouse roofs, truck yards and rail sidings", 2: "a refinery with round storage tanks and pipe racks", 3: "a derelict factory complex with smokestacks and scrap piles" },
+  port: { 1: "a container terminal with stacked shipping containers and gantry cranes", 2: "harbor docks with piers and moored fishing boats", 3: "a shipyard with a dry dock and cranes" },
 };
 const WEATHER: Record<string, string> = {
   clear: "clear overcast daylight", fog: "thick low fog drifting", dusk: "dim blue dusk light", rain: "light rain",
@@ -18,7 +18,7 @@ const MAX_AHEAD = 2;
 function basePrompt(c: FeedContext) {
   const view = c.thermal ? "Monochrome white-hot thermal camera image." : "Desaturated grainy surveillance camera image.";
   const alt = c.alt > 60 ? "high altitude, wide top-down view" : c.alt > 30 ? "medium altitude top-down view" : "low altitude, close top-down view";
-  return `${view} Fictional training exercise. Quadcopter drone camera looking straight down over ${SCENE[c.sector]}, ${WEATHER[c.weather] ?? "daylight"}. Military training trucks drive steadily along tracks and open routes, wheels turning and light dust trailing. Small groups of uniformed training personnel run across open ground with natural arm and leg motion. Vehicles and runners remain visible and continue moving through the shot. ${alt}, slowly drifting ${c.heading}. Steady continuous drone move. Sound: drone rotor hum, wind, distant vehicle engines.`;
+  return `${view} Fictional training exercise. Quadcopter drone camera looking straight down over ${SCENE[c.area][c.sector]}, ${WEATHER[c.weather] ?? "daylight"}. Military training trucks drive steadily along tracks and open routes, wheels turning and light dust trailing. Small groups of uniformed training personnel run across open ground with natural arm and leg motion. Vehicles and runners remain visible and continue moving through the shot. ${alt}, slowly drifting ${c.heading}. Steady continuous drone move. Sound: drone rotor hum, wind, distant vehicle engines.`;
 }
 
 export class LiveFeed {
@@ -26,7 +26,7 @@ export class LiveFeed {
   private ahead = 0;
   private lastClip: string | null = null;
   private paused = false;
-  ctx: FeedContext = { sector: 1, weather: "clear", alt: 40, heading: "north", thermal: false };
+  ctx: FeedContext = { area: "urban", sector: 1, weather: "clear", alt: 40, heading: "north", thermal: false };
   constructor(private video: HTMLVideoElement, private onStatus: (s: FeedStatus, msg?: string) => void) {}
 
   async start() {

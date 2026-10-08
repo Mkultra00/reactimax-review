@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { consumeEvents, createSim, sensorRadius, step, TICK, WORLD, type SimState, type Input } from "@/game/sim";
-import { loadSectorImages, SECTOR_INFO } from "@/game/feed";
+import { consumeEvents, createSim, sensorRadius, step, TICK, WORLD, type SimState, type Input, type Area } from "@/game/sim";
+import { loadSectorImages, AREA_INFO } from "@/game/feed";
 import { sfx, unlockAudio, stopAudio, radioEvent } from "@/game/audio";
 import { LiveFeed, type FeedStatus } from "@/game/liveFeed";
 
@@ -17,7 +17,7 @@ const LABEL: Record<string, string> = {
   infantry: "INF", officer: "CMD", spotter: "OBS", vehicle: "VEH", weapon: "MG", civilian: "CIV · NO-STRIKE",
 };
 
-export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
+export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Area }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const keys = useRef(new Set<string>());
   const touch = useRef({ mx: 0, my: 0, climb: 0, drop: false });
@@ -44,9 +44,10 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
     unlockAudio();
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
-    const sim: SimState = createSim((Math.random() * 2 ** 31) | 0);
+    const sim: SimState = createSim((Math.random() * 2 ** 31) | 0, area);
+    const SECTOR_INFO = AREA_INFO[area].sectors;
     let imgs: Record<1 | 2 | 3, HTMLImageElement> | null = null;
-    loadSectorImages().then((i) => (imgs = i));
+    loadSectorImages(area).then((i) => (imgs = i));
 
     const C = {
       hud: cssVar("--hud"), dim: cssVar("--hud-dim"), warn: cssVar("--hud-warn"),
@@ -123,7 +124,7 @@ export function Game({ onEnd }: { onEnd: (r: RunResult) => void }) {
         if (lf) {
           const d = sim.drone, i = readInputPeek();
           const heading = Math.abs(i.mx) + Math.abs(i.my) < 0.1 ? "in a slow hover" : `${i.my < -0.3 ? "north" : i.my > 0.3 ? "south" : ""}${i.mx > 0.3 ? "east" : i.mx < -0.3 ? "west" : ""}`;
-          lf.ctx = { sector: sim.sector, weather: sim.weather, alt: d.alt, heading, thermal: thermalRef.current };
+          lf.ctx = { area, sector: sim.sector, weather: sim.weather, alt: d.alt, heading, thermal: thermalRef.current };
         }
         for (const ev of consumeEvents(sim)) {
           radioEvent(ev);
