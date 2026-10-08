@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { consumeEvents, createSim, sensorRadius, step, canReturnToBase, returnToBase, TICK, WORLD, type SimState, type Input, type Area } from "@/game/sim";
 import { Button } from "@/components/ui/button";
 import { loadSectorImages, AREA_INFO } from "@/game/feed";
-import { sfx, unlockAudio, stopAudio, radioEvent, radioRecon } from "@/game/audio";
+import { sfx, unlockAudio, stopAudio, radioEvent, radioRecon, updateDroneAudio } from "@/game/audio";
 import { createReconMemory, offscreenReport, markReconReported } from "@/game/recon";
 import { LiveFeed, type FeedStatus } from "@/game/liveFeed";
 
@@ -125,7 +125,9 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
       last = now;
       acc += dt;
       while (acc >= TICK) {
-        step(sim, readInput());
+        const input = readInput();
+        step(sim, input);
+        updateDroneAudio(Math.hypot(input.mx, input.my), input.climb, sim.status === "playing");
         acc -= TICK;
         const lf = feedRef.current;
         if (lf) {
@@ -447,6 +449,8 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
       }
     };
 
+    const audioVisibility = () => updateDroneAudio(0, 0, sim.status === "playing");
+    document.addEventListener("visibilitychange", audioVisibility);
     raf = requestAnimationFrame(frame);
     return () => {
       simRef.current = null;
@@ -454,6 +458,7 @@ export function Game({ onEnd, area }: { onEnd: (r: RunResult) => void; area: Are
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);
+      document.removeEventListener("visibilitychange", audioVisibility);
       stopAudio();
     };
   }, [onEnd]);

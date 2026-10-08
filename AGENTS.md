@@ -16,3 +16,4 @@
 - Area selections use the shared simulation `Area` type across spawn tables, sector imagery and live-feed scene descriptions so new environments remain consistent across both feeds.
 - Radio speech is generated once with ElevenLabs, stored as CDN asset pointers and preloaded for sim-event playback; no live speech requests are made during gameplay, avoiding latency and repeat generation costs.
 - Off-screen radio reports read living non-civilian units against the actual canvas bounds; throttle reports and let combat calls interrupt them so guidance stays current without changing game outcomes.
+- Drone rotor audio is synthesized locally with Web Audio and follows flight inputs without writing simulation state; this avoids streaming latency and keeps gameplay independent of sound.
