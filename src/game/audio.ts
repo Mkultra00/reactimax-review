@@ -1,5 +1,6 @@
 // Sim-driven audio stings: instant feedback independent of any video feed.
-import { RADIO_CLIPS, radioCallForEvent, type RadioCall } from "./radio";
+import { RADIO_CLIPS, radioCallForEvent, shouldPlay, type RadioCall } from "./radio";
+const lastThreat = new Map<RadioCall, number>();
 import type { SimEvent } from "./sim";
 
 let ctx: AudioContext | null = null;
@@ -24,6 +25,7 @@ export function radioEvent(event: SimEvent) {
   if (!call || !ctx || ctx.state !== "running" || document.hidden) return;
   const buffer = radioBuffers.get(call);
   if (!buffer) return; // Never play a delayed callout against a later game event.
+  if (!shouldPlay(call, ctx.currentTime, lastThreat)) return;
   const source = ctx.createBufferSource();
   const gain = ctx.createGain();
   source.buffer = buffer; gain.gain.value = 0.8;
