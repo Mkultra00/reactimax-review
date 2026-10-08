@@ -35,6 +35,7 @@ export interface Entity {
 
 export interface Grenade { x: number; y: number; impactAt: number; dropAlt: number }
 export interface Jammer { x: number; y: number; r: number }
+export interface Crater { x: number; y: number; radius: number; createdAt: number; sector: 1 | 2 | 3 }
 
 export type SimEvent =
   | { type: "target_detected"; id: number; kind: Kind }
@@ -60,6 +61,7 @@ export interface SimState {
   drone: DroneState;
   entities: Entity[];
   grenades: Grenade[];
+  craters: Crater[];
   jammers: Jammer[];
   extraction: { x: number; y: number };
   score: number;
@@ -126,7 +128,7 @@ export function createSim(seed: number): SimState {
   const s: SimState = {
     time: 0, seed, rng: seed >>> 0, sector: 1, weather: "clear", wind: { x: 0, y: 0 },
     drone: { x: 0, y: 0, alt: 60, vx: 0, vy: 0, battery: 100, health: START_HEALTH, signal: 1, grenades: START_GRENADES },
-    entities: [], grenades: [], jammers: [], extraction: { x: 0, y: 0 },
+    entities: [], grenades: [], craters: [], jammers: [], extraction: { x: 0, y: 0 },
     score: 0, kills: 0, status: "playing", events: [], invuln: 0, dropCooldown: 0,
   };
   loadSector(s, 1);
@@ -177,6 +179,7 @@ export function step(s: SimState, input: Input, dt = TICK) {
   }
   s.grenades = s.grenades.filter((g) => {
     if (s.time < g.impactAt) return true;
+    s.craters.push({ x: g.x, y: g.y, radius: BLAST_RADIUS * 0.65, createdAt: s.time, sector: s.sector });
     let kills = 0;
     for (const e of s.entities) {
       if (e.state === "dead") continue;

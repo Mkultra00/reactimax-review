@@ -82,7 +82,7 @@ export class LiveFeed {
   // Event clips jump the generation queue; background chain restarts fresh after.
   impact() {
     this.lastClip = null;
-    void this.enqueue(`${basePrompt(this.ctx).split(" Sound:")[0]} A sudden small dirt burst and dust cloud erupts on the ground below, debris settling. Sound: sharp thud, rotor hum.`, true);
+    void this.enqueue(`${basePrompt(this.ctx).split(" Sound:")[0]} A sudden small dirt burst and dust cloud erupts on the ground below, displacing earth. As debris and dust settle, a lasting shallow crater with a dark bowl and raised ragged rim remains visible in the ground. Sound: sharp thud, rotor hum.`, true);
   }
   sectorChanged() { this.lastClip = null; }
 
