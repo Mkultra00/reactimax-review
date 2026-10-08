@@ -68,7 +68,7 @@ export interface SimState {
   extraction: { x: number; y: number };
   score: number;
   kills: number;
-  status: "playing" | "won" | "lost";
+  status: "playing" | "won" | "lost" | "returned";
   lostReason?: string;
   events: SimEvent[];
   invuln: number;
@@ -172,6 +172,16 @@ const SIGHT: Record<Kind, number> = { infantry: 130, spotter: 200, officer: 110,
 const SHOOTS: Record<Kind, number> = { infantry: 0.05, officer: 0.03, weapon: 0.12, spotter: 0, vehicle: 0.04, civilian: 0 };
 
 export const sensorRadius = (alt: number) => alt * 1.4;
+
+export function canReturnToBase(s: SimState) {
+  return s.status === "playing" && s.drone.grenades === 0 && s.grenades.length === 0;
+}
+
+export function returnToBase(s: SimState): boolean {
+  if (!canReturnToBase(s)) return false;
+  s.status = "returned";
+  return true;
+}
 
 export function step(s: SimState, input: Input, dt = TICK) {
   if (s.status !== "playing") return;

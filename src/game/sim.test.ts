@@ -1,7 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { AREAS, blastDamage, createSim, extractionScore, fallTime, step, strikeScore, START_GRENADES, START_HEALTH, TICK } from "./sim";
+import { AREAS, blastDamage, createSim, extractionScore, fallTime, step, strikeScore, canReturnToBase, returnToBase, START_GRENADES, START_HEALTH, TICK } from "./sim";
 
 describe("rules", () => {
+  it("allows return to base only after all grenades are exhausted", () => {
+    const s = createSim(3);
+    expect(canReturnToBase(s)).toBe(false);
+    expect(returnToBase(s)).toBe(false);
+    s.drone.grenades = 0;
+    expect(canReturnToBase(s)).toBe(true);
+    s.score = 250; s.kills = 1;
+    expect(returnToBase(s)).toBe(true);
+    expect(s.status).toBe("returned");
+    expect(s.score).toBe(250);
+    expect(s.kills).toBe(1);
+    step(s, { mx: 1, my: 0, climb: 0, drop: false });
+    expect(s.time).toBe(0);
+    expect(returnToBase(s)).toBe(false);
+  });
+  it("waits for the final grenade to explode before returning", () => {
+    const s = createSim(3); s.drone.grenades = 0;
+    s.grenades.push({ x: 100, y: 200, impactAt: 0, dropAlt: 60 });
+    expect(returnToBase(s)).toBe(false);
+    step(s, { mx: 0, my: 0, climb: 0, drop: false });
+    expect(returnToBase(s)).toBe(true);
+  });
   it("explosions leave a crater at the impact, even when no target is hit", () => {
     const s = createSim(3);
     s.entities = [];
