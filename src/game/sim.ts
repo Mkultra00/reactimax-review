@@ -42,6 +42,7 @@ export type SimEvent =
   | { type: "grenade_dropped"; x: number; y: number }
   | { type: "grenade_impact"; x: number; y: number; hit: boolean; kills: number }
   | { type: "drone_hit"; health: number }
+  | { type: "under_fire"; weapon: "manpad" | "small_arms"; id: number }
   | { type: "signal_lost" }
   | { type: "sector_cleared"; sector: number }
   | { type: "score"; points: number; label: string; x: number; y: number };
@@ -235,7 +236,10 @@ export function step(s: SimState, input: Input, dt = TICK) {
         }
       }
     }
-    if (e.state === "alert" && e.sightT > 2 && SHOOTS[e.kind] > 0) e.state = "engage";
+    if (e.state === "alert" && e.sightT > 2 && SHOOTS[e.kind] > 0) {
+      e.state = "engage";
+      s.events.push({ type: "under_fire", weapon: e.kind === "weapon" ? "manpad" : "small_arms", id: e.id });
+    }
     if (e.state === "cover" && rand(s) < dt * 0.3) e.state = "alert";
     if ((e.state === "engage" || e.state === "alert") && e.sightT === 0) e.state = "patrol";
 

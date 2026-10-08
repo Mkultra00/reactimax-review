@@ -12,3 +12,17 @@ describe("grenade radio callouts", () => {
     expect(radioCallForEvent({ type: "target_detected", id: 1, kind: "infantry" })).toBeNull();
   });
 });
+describe("threat radio callouts", () => {
+  it("calls MANPAD for heavy weapons and small arms for others", () => {
+    expect(radioCallForEvent({ type: "under_fire", weapon: "manpad", id: 1 })).toBe("Manpad");
+    expect(radioCallForEvent({ type: "under_fire", weapon: "small_arms", id: 2 })).toBe("Small arms");
+  });
+  it("does not repeat the same threat call within 6 seconds", async () => {
+    const { shouldPlay } = await import("./radio");
+    const last = new Map();
+    expect(shouldPlay("Small arms", 0, last)).toBe(true);
+    expect(shouldPlay("Small arms", 3, last)).toBe(false);
+    expect(shouldPlay("Manpad", 3, last)).toBe(true);
+    expect(shouldPlay("Small arms", 6.5, last)).toBe(true);
+  });
+});
