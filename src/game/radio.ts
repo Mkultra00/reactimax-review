@@ -1,10 +1,8 @@
-import shellOut from "@/assets/shell-out.mp3.asset.json";
-import splash from "@/assets/splash.mp3.asset.json";
-import smallArms from "@/assets/small-arms.mp3.asset.json";
-import manpad from "@/assets/manpad.mp3.asset.json";
 import type { SimEvent } from "./sim";
 
-export const RADIO_CLIPS = { "Shell out": shellOut.url, Splash: splash.url, "Small arms": smallArms.url, Manpad: manpad.url } as const;
+// Voice clips are baked into public/audio (fetched from Lovable's CDN; the repo only
+// shipped /__l5e stub URLs that 404 everywhere except lovableproject.com).
+export const RADIO_CLIPS = { "Shell out": "/audio/shell-out.mp3", Splash: "/audio/splash.mp3", "Small arms": "/audio/small-arms.mp3", Manpad: "/audio/manpad.mp3" } as const;
 export type RadioCall = keyof typeof RADIO_CLIPS;
 
 /** Minimum seconds before the same threat callout repeats, so a firefight doesn't spam the radio. */

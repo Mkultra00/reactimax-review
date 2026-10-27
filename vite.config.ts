@@ -11,6 +11,13 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // SPA mode: prerender a root document so static hosts (Spacefast's static lane) serve the
+    // app at / instead of a file listing. Matches the DoughDilly (venturepulse) fix.
+    spa: {
+      enabled: true,
+      maskPath: "/",
+      prerender: { enabled: true, crawlLinks: true },
+    },
   },
   // Reactor SDK loads its wasm relative to its own file; pre-bundling breaks that path.
   vite: { optimizeDeps: { exclude: ["@reactor-team/js-sdk"], include: ["@reactor-team/js-sdk > awaitqueue", "@reactor-team/js-sdk > hls.js", "@reactor-team/js-sdk > mp4box"] } },
